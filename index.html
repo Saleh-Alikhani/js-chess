@@ -1,0 +1,65 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      #board {
+        width: 640px;
+        height: 640px;
+        background-color: black;
+        border: 1px solid;
+        display: flex;
+        flex-wrap: wrap;
+      }
+
+      .square {
+        height: 80px;
+        width: 80px;
+        position: relative;
+
+        svg {
+          height: 60px;
+          width: 60px;
+          margin: 10px;
+          position: relative;
+          z-index: -9;
+        }
+        path {
+          position: relative;
+        }
+      }
+      .piece {
+        position: relative;
+        z-index: 9;
+        cursor: grab;
+      }
+
+      .beige {
+        background-color: rgb(62, 62, 62);
+      }
+
+      .brown {
+        background-color: brown;
+      }
+
+      .black {
+        fill: black;
+      }
+
+      .white {
+        fill: white;
+        stroke: black;
+        stroke-width: 1px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="board"></div>
+    <p>It is <span id="player"></span> go</p>
+    <p id="info-display"></p>
+    <button id="reset">play again</button>
+
+    <script type="module" src="./game.js" />
+  </body>
+</html>
