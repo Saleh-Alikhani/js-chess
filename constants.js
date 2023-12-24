@@ -83,6 +83,8 @@ export const START_PIECES = [
   rook,
 ];
 
+export const promotionPieces = [queen, knight, bishop, rook];
+
 export const knightMoves = [10, -10, 6, -6, 17, -17, 15, -15];
 
 export const kingMoves = [1, -1, 8, -8, 7, -7, 9, -9];

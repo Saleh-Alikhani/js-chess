@@ -70,20 +70,6 @@ function Board() {
           )
       );
 
-      const alliedMoves = this.pieces
-        .filter((p) =>
-          p.firstChild.classList.contains(
-            Game.board[threatendKing[0]].firstChild.firstChild.classList[0]
-          )
-        )
-        .filter((p) => p.id !== "king")
-        .flatMap((piece) =>
-          getPieceMoves(
-            piece.id,
-            Number(piece.parentNode.getAttribute("square-id"))
-          )
-        );
-
       const enemyMoves = enemies.flatMap((piece) =>
         getPieceMoves(
           piece.id,
@@ -102,18 +88,41 @@ function Board() {
         ).includes(threatendKing[0])
       );
 
+      //defect with threatedAxis
+      console.log(attackers, threatendKing);
       const threatedAxis = getKingAttackerAxis(
         attackers[0].id,
         Number(attackers[0].parentNode.getAttribute("square-id")),
         threatendKing[0]
       );
+
       threatedAxis.push(
         Number(attackers[0].parentNode.getAttribute("square-id"))
       );
+      const blockers = [];
 
-      const canBeBlocked = threatedAxis.some((s) => alliedMoves.includes(s));
+      const alliedMoves = this.pieces
+        .filter((p) =>
+          p.firstChild.classList.contains(
+            Game.board[threatendKing[0]].firstChild.firstChild.classList[0]
+          )
+        )
+        .filter((p) => p.id !== "king")
+        .flatMap((piece) => {
+          const moves = getPieceMoves(
+            piece.id,
+            Number(piece.parentNode.getAttribute("square-id"))
+          );
+          threatedAxis.map((m) => {
+            if (moves.includes(m)) {
+              blockers.push(piece);
+            }
+          });
+        });
 
-      if (possibleMoves.length === 0 && !canBeBlocked) {
+      console.log(blockers, possibleMoves);
+
+      if (possibleMoves.length === 0 && blockers.length === 0) {
         isMate = true;
         this.mate =
           Game.board[threatendKing].firstChild.firstChild.classList[0];
@@ -133,6 +142,25 @@ function Board() {
   };
 
   this.changeTurn = () => {
+    if (draggedElement.id === "pawn") {
+      //pawn promotion
+      if (Math.floor(targetId / 8) === 0 || Math.floor(targetId / 8) === 7) {
+        const pieceIndex = Game.pieces.indexOf(Game.board[targetId].firstChild);
+        Game.pieces.splice(pieceIndex, 1);
+        Game.board[targetId].firstChild.remove();
+        Game.board[targetId].innerHTML =
+          CONSTANTS.promotionPieces[
+            Number(
+              prompt("Enter a Number:1-queen   2-knight   3-bishop   4-rook")
+            ) - 1
+          ];
+        Game.board[targetId].firstChild.setAttribute("draggable", true);
+        Game.board[targetId].firstChild.firstChild.classList.add(Game.turn);
+        Game.pieces.splice(pieceIndex, 0, Game.board[targetId].firstChild);
+      }
+    }
+    infoDisplay.textContent = "";
+
     this.checkIfKingsthretend();
 
     playerDisplay.textContent = this.turn;
@@ -141,6 +169,20 @@ function Board() {
   this.setBoard();
 
   playerDisplay.textContent = this.turn;
+}
+
+function pieceGotSupport(position) {
+  const color = Game.board[position].firstChild.firstChild.classList[0];
+
+  const team = Game.pieces.filter((p) =>
+    p.firstChild.classList.contains(color)
+  );
+
+  const teamMoves = team.flatMap((p) =>
+    getPieceMoves(p.id, Number(p.parentNode.getAttribute("square-id")))
+  );
+
+  return teamMoves.includes(position);
 }
 
 function getPieceThreats(type, start) {
@@ -163,7 +205,7 @@ function getKingAttackerAxis(type, start, kingPos) {
   let temp = start;
 
   switch (type) {
-    case "queen" || "rook":
+    case "rook":
       temp = start;
       if (start % 8 === kingPos % 8) {
         //Y axis
@@ -182,27 +224,29 @@ function getKingAttackerAxis(type, start, kingPos) {
       if (Math.floor(start / 8) === Math.floor(kingPos / 8)) {
         //X axis
         if (start > kingPos) {
-          while (temp !== kingPos) {
+          while (temp - 1 !== kingPos) {
             temp -= 1;
             axis.push(temp);
           }
         } else {
-          while (temp !== kingPos) {
+          while (temp + 1 !== kingPos) {
             temp += 1;
             axis.push(temp);
           }
         }
       }
-    case "queen" || "bishop":
+
+      return axis;
+    case "bishop":
       temp = start;
       if (start % 7 === kingPos % 7) {
         if (start > kingPos) {
-          while (temp !== kingPos) {
+          while (temp - 7 !== kingPos) {
             temp -= 7;
             axis.push(temp);
           }
         } else {
-          while (temp !== kingPos) {
+          while (temp + 7 !== kingPos) {
             temp += 7;
             axis.push(temp);
           }
@@ -210,19 +254,25 @@ function getKingAttackerAxis(type, start, kingPos) {
       }
       if (start % 9 === kingPos % 9) {
         if (start > kingPos) {
-          while (temp !== kingPos) {
+          while (temp - 9 !== kingPos) {
             temp -= 9;
             axis.push(temp);
           }
         } else {
-          while (temp !== kingPos) {
+          while (temp + 9 !== kingPos) {
             temp += 9;
             axis.push(temp);
           }
         }
       }
+      return axis;
+    case "queen":
+      return getKingAttackerAxis("bishop", start, kingPos).concat(
+        getKingAttackerAxis("rook", start, kingPos)
+      );
+    default:
+      return axis;
   }
-  return axis;
 }
 
 function getPieceMoves(type, start) {
@@ -232,8 +282,42 @@ function getPieceMoves(type, start) {
 
   switch (type) {
     case "knight":
-      return CONSTANTS.knightMoves.map((m) => m + start);
+      return CONSTANTS.knightMoves
+        .map((m) => m + start)
+        .filter(
+          (m) =>
+            Math.abs((start % 8) - (m % 8)) < 3 &&
+            Math.floor(start / 8) !== Math.floor(m / 8) &&
+            Game.board[m] &&
+            (!Game.board[m].hasChildNodes() ||
+              !Game.board[m].firstChild.firstChild.classList.contains(
+                Game.board[start].firstChild.firstChild.classList[0]
+              ))
+        );
     case "king":
+      let availableCastle = [];
+      if (!Game.board[start].firstChild.hasAttribute("moved")) {
+        if (
+          Game.board[start - 3].firstChild &&
+          !Game.board[start - 2].hasChildNodes() &&
+          !Game.board[start - 1].hasChildNodes() &&
+          Game.board[start - 3].firstChild.id === "rook" &&
+          !Game.board[start - 3].firstChild.hasAttribute("moved")
+        ) {
+          availableCastle.push(start - 2);
+        }
+        if (
+          Game.board[start + 4].firstChild &&
+          !Game.board[start + 3].hasChildNodes() &&
+          !Game.board[start + 2].hasChildNodes() &&
+          !Game.board[start + 1].hasChildNodes() &&
+          Game.board[start + 4].firstChild.id === "rook" &&
+          !Game.board[start + 4].firstChild.hasAttribute("moved")
+        ) {
+          availableCastle.push(start + 2);
+        }
+      }
+
       return CONSTANTS.kingMoves
         .map((m) => m + start)
         .filter(
@@ -243,32 +327,54 @@ function getPieceMoves(type, start) {
               (Game.board[i].hasChildNodes() &&
                 !Game.board[i].firstChild.firstChild.classList.contains(
                   Game.board[start].firstChild.firstChild.classList[0]
-                )))
-        );
+                ) &&
+                !pieceGotSupport(i)))
+        )
+        .concat(availableCastle);
     case "pawn":
-      if (Math.floor(start / 8) === 1) {
+      if (
+        Math.floor(start / 8) === 1 &&
+        !Game.board[start + 8].hasChildNodes() &&
+        !Game.board[start + 16].hasChildNodes()
+      ) {
         moves.push(start + 16);
-      } else if (Math.floor(start / 8) === 6) {
+      } else if (
+        Math.floor(start / 8) === 6 &&
+        !Game.board[start - 8].hasChildNodes() &&
+        !Game.board[start - 16].hasChildNodes()
+      ) {
         moves.push(start - 16);
       }
       if (Game.board[start].firstChild.firstChild.classList.contains("white")) {
         if (!Game.board[start - 8].hasChildNodes()) {
           moves.push(start - 8);
         }
-        if (Game.board[start - 7].hasChildNodes()) {
+        if (
+          Game.board[start - 7].hasChildNodes() &&
+          Math.floor((start - 7) / 8) !== Math.floor(start / 8)
+        ) {
           moves.push(start - 7);
         }
-        if (Game.board[start - 9].hasChildNodes()) {
+        if (
+          Game.board[start - 9].hasChildNodes() &&
+          Math.floor((start - 9) / 8) === Math.floor(start / 8) - 1
+        ) {
           moves.push(start - 9);
         }
       } else {
         if (!Game.board[start + 8].hasChildNodes()) {
           moves.push(start + 8);
         }
-        if (Game.board[start + 7].hasChildNodes()) {
+        if (
+          Game.board[start + 7].hasChildNodes() &&
+          Math.floor((start + 7) / 8) !== Math.floor(start / 8)
+        ) {
           moves.push(start + 7);
         }
-        if (Game.board[start + 9].hasChildNodes()) {
+        if (
+          Game.board[start + 9].hasChildNodes() &&
+          Math.floor((start + 9) / 8) === Math.floor(start / 8) + 1
+        ) {
           moves.push(start + 9);
         }
       }
@@ -405,12 +511,14 @@ function iterateAxis(moves, blocked, index, axis, start) {
       moves.push(index);
       blocked[axis] = true;
     } else {
+      moves.push(index);
+
       blocked[axis] = true;
     }
   }
 }
 
-let startPositionId, draggedElement;
+let startPositionId, draggedElement, targetId;
 
 function checkIsKingExposed() {
   const enemyteam = Game.pieces.filter(
@@ -432,16 +540,24 @@ function checkIsKingExposed() {
 
 function dragDrop(e) {
   e.stopPropagation();
+  if (Game.mate) {
+    return;
+  }
+
+  console.log(draggedElement);
 
   let isCorrectPieceMoved = draggedElement.firstChild.classList.contains(
     Game.turn
   );
-  let taken = e.target.classList.contains("piece");
+  //let taken = e.target.classList.contains("piece");
   let isCorrectPieceTaken = e.target.firstChild?.classList.contains(
     Game.turn === "white" ? "black" : "white"
   );
+  let isAlliedTargeted = e.target.firstChild?.classList.contains(
+    Game.turn === "white" ? "white" : "black"
+  );
 
-  const targetId = Number(
+  targetId = Number(
     e.target.getAttribute("square-id") ||
       e.target.parentNode.getAttribute("square-id")
   );
@@ -449,47 +565,56 @@ function dragDrop(e) {
   let valid = Game.checkValidation(targetId);
 
   if (isCorrectPieceMoved) {
-    if (isCorrectPieceTaken && valid) {
-      e.target.parentNode.append(draggedElement);
-      Game.pieces.splice(Game.pieces.indexOf(e.target), 1);
-      e.target.remove();
-      if (checkIsKingExposed()) {
-        Game.board[startPositionId].appendChild(draggedElement);
-        Game.board[targetId].appendChild(e.target);
-        return;
-      }
-      if (draggedElement.id === "pawn") {
-        if (Math.floor(targetId / 8) === 0 || Math.floor(targetId / 8) === 7) {
-          const pieceIndex = Game.pieces.indexOf(
-            Game.board[targetId].firstChild
-          );
-          Game.pieces.splice(pieceIndex, 1);
-          Game.board[targetId].firstChild.remove();
-          Game.board[targetId].innerHTML = CONSTANTS.queen;
-          Game.board[targetId].firstChild.setAttribute("draggable", true);
-          Game.board[targetId].firstChild.firstChild.classList.add(Game.turn);
-          Game.pieces.splice(pieceIndex, 0, Game.board[targetId].firstChild);
-        }
-      }
-      Game.changeTurn();
-      return;
-    }
-    if (taken) {
-      //display info to player
+    if (isAlliedTargeted) {
       return;
     }
     if (valid) {
+      if (draggedElement.id === "king" || draggedElement.id === "rook") {
+        draggedElement.setAttribute("moved", true);
+      }
+      if (
+        draggedElement.id === "king" &&
+        Math.abs(startPositionId - targetId) === 2
+      ) {
+        if (targetId > startPositionId) {
+          Game.board[targetId - 1].appendChild(
+            Game.board[targetId + 2].firstChild
+          );
+        } else {
+          Game.board[targetId + 1].appendChild(
+            Game.board[targetId - 1].firstChild
+          );
+        }
+      }
+      if (isCorrectPieceTaken) {
+        e.target.parentNode.append(draggedElement);
+        Game.pieces.splice(Game.pieces.indexOf(e.target), 1);
+        e.target.remove();
+        if (checkIsKingExposed()) {
+          Game.board[startPositionId].appendChild(draggedElement);
+          Game.board[targetId].appendChild(e.target);
+          return;
+        }
+
+        Game.changeTurn();
+        return;
+      }
       e.target.appendChild(draggedElement);
-    }
-    if (!checkIsKingExposed() && valid) {
-      Game.changeTurn();
-      return;
-    } else {
-      Game.board[startPositionId].appendChild(draggedElement);
-      if (e.target.hasChildNodes()) {
-        Game.board[targetId].appendChild(e.target);
+      if (!checkIsKingExposed()) {
+        Game.changeTurn();
+        return;
+      } else {
+        Game.board[startPositionId].appendChild(draggedElement);
+        if (e.target.hasChildNodes()) {
+          Game.board[targetId].appendChild(e.target);
+        }
       }
     }
+
+    // if (taken) {
+    //   //display info to player
+    //   return;
+    //}
   }
 }
 
