@@ -1,5 +1,6 @@
 import * as CONSTANTS from "../constants/constants";
 import { MyHtmlDivElement, MyNode } from "./types";
+import { getKingAttackerAxis } from "./utils";
 
 export declare interface Board {
   pieces: Array<MyNode>;
@@ -259,81 +260,6 @@ export class Board {
     }
   };
 
-  getKingAttackerAxis = function (type, start, kingPos) {
-    const axis: Array<number> = [];
-    let temp = start;
-
-    switch (type) {
-      case "rook":
-        temp = start;
-        if (start % 8 === kingPos % 8) {
-          //Y axis
-          if (start > kingPos) {
-            while (temp - 8 !== kingPos) {
-              temp -= 8;
-              axis.push(temp);
-            }
-          } else {
-            while (temp + 8 !== kingPos) {
-              temp += 8;
-              axis.push(temp);
-            }
-          }
-        }
-        if (Math.floor(start / 8) === Math.floor(kingPos / 8)) {
-          //X axis
-          if (start > kingPos) {
-            while (temp - 1 !== kingPos) {
-              temp -= 1;
-              axis.push(temp);
-            }
-          } else {
-            while (temp + 1 !== kingPos) {
-              temp += 1;
-              axis.push(temp);
-            }
-          }
-        }
-
-        return axis;
-      case "bishop":
-        temp = start;
-        if (start % 7 === kingPos % 7) {
-          if (start > kingPos) {
-            while (temp - 7 !== kingPos) {
-              temp -= 7;
-              axis.push(temp);
-            }
-          } else {
-            while (temp + 7 !== kingPos) {
-              temp += 7;
-              axis.push(temp);
-            }
-          }
-        }
-        if (start % 9 === kingPos % 9) {
-          if (start > kingPos) {
-            while (temp - 9 !== kingPos) {
-              temp -= 9;
-              axis.push(temp);
-            }
-          } else {
-            while (temp + 9 !== kingPos) {
-              temp += 9;
-              axis.push(temp);
-            }
-          }
-        }
-        return axis;
-      case "queen":
-        return this.getKingAttackerAxis("bishop", start, kingPos).concat(
-          this.getKingAttackerAxis("rook", start, kingPos)
-        );
-      default:
-        return axis;
-    }
-  };
-
   setBoard = function () {
     console.log("h");
     this.pieces = [];
@@ -430,7 +356,7 @@ export class Board {
 
       //defect with threatedAxis
       console.log(attackers, threatendKing);
-      const threatedAxis = this.getKingAttackerAxis(
+      const threatedAxis = getKingAttackerAxis(
         attackers[0].id,
         Number(attackers[0].parentNode.getAttribute("square-id")),
         threatendKing[0]
