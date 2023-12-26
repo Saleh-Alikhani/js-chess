@@ -261,13 +261,9 @@ export class Board {
   };
 
   setBoard = function () {
-    console.log("h");
     this.pieces = [];
     this.board = [];
-    this.board.map((s) => {
-      console.log(s);
-      gameBoard?.removeChild(s);
-    });
+    this.board.map((s) => gameBoard?.removeChild(s));
     this.board = CONSTANTS.START_PIECES.map((piece, index) => {
       const square = document.createElement("div") as MyHtmlDivElement;
       square.classList.add("square");
@@ -354,8 +350,6 @@ export class Board {
         ).includes(threatendKing[0])
       );
 
-      //defect with threatedAxis
-      console.log(attackers, threatendKing);
       const threatedAxis = getKingAttackerAxis(
         attackers[0].id,
         Number(attackers[0].parentNode.getAttribute("square-id")),
@@ -385,8 +379,6 @@ export class Board {
             }
           });
         });
-
-      console.log(blockers, possibleMoves);
 
       if (possibleMoves.length === 0 && blockers.length === 0) {
         isMate = true;
