@@ -40,3 +40,4 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/deploym
 ## Known issues
 1.Check Mate is not triggered when king got a free sqare behind him on the threatened axis and sqaure isnt threated by any other piece
 2.Game lacks En passant move
+3.Play again button not working
