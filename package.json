@@ -1,7 +1,7 @@
 {
   "name": "js-chess",
   "version": "1.0.0",
-  "description": "chess on javascript",
+  "description": "Chess on javascript and typescript.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
