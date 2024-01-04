@@ -19,6 +19,6 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
 
 ## Known issues
-1. Check Mate is not triggered when king got a free sqare behind him on the threatened axis and sqaure isnt threated by any other piece
-1. Game lacks En passant move
-1. Play again button not working
+1. Check Mate is not triggered when king got a free sqare behind him on the threatened axis and sqaure isnt threatened by any other enemy piece.
+1. Game lacks En passant move.
+1. Play again button not working.
